@@ -29,7 +29,7 @@ typedef struct {
 } FoxScriptEnv;
 
 // Initialize environment
-void init_env(FoxScriptEnv *env) {
+void envinit(FoxScriptEnv *env) {
     env->var_count = 0;
     env->func_count = 0;
     env->var_capacity = 10;  // Initial capacity of 10
@@ -38,13 +38,13 @@ void init_env(FoxScriptEnv *env) {
 }
 
 // Resize the variables array when needed
-void resize_variables(FoxScriptEnv *env) {
+void rv(FoxScriptEnv *env) {
     env->var_capacity *= 2;  // Double the capacity
     env->variables = (Variable *)realloc(env->variables, env->var_capacity * sizeof(Variable));
 }
 
 // Add variable to environment
-int add_variable(FoxScriptEnv *env, const char *name, int value, int is_mutable) {
+int av(FoxScriptEnv *env, const char *name, int value, int is_mutable) {
     if (env->var_count >= env->var_capacity) {
         resize_variables(env);  // Resize array if full
     }
@@ -58,24 +58,39 @@ int add_variable(FoxScriptEnv *env, const char *name, int value, int is_mutable)
 }
 
 // Update an existing variable's value
-int update_variable(FoxScriptEnv *env, const char *name, int value) {
+int update(FoxScriptEnv *env, const char *name, int value) {
     for (int i = 0; i < env->var_count; i++) {
         if (strcmp(env->variables[i].name, name) == 0) {
             if (env->variables[i].is_mutable) {
                 env->variables[i].value = value;
                 return 0;
             } else {
+                // Error: Variable is immutable
                 printf("Error: Variable %s is immutable!\n", name);
+                FILE *error_file = fopen("errorlog.txt", "a");  // Open error log in append mode
+                if (error_file != NULL) {
+                    fprintf(error_file, "Error: Variable %s is immutable!\n", name);
+                    fclose(error_file);  // Close the log file
+                } else {
+                    printf("Error opening errorlog.txt\n");
+                }
+                // Call the Python error handler script (via fopen)
+                FILE *script = fopen("errorhandle.py", "r");
+                if (script) {
+                    fclose(script);  // If file exists, open and close it (you can execute the Python script here if needed)
+                    system("python3 errorhandle.py");  // Call the Python script
+                } else {
+                    system("python errorhandle.py")
+                }
                 return -1;
             }
         }
     }
-    printf("Error: Variable %s not found!\n", name);
-    return -1;
-}
+
+
 
 // Add function to environment
-int add_function(FoxScriptEnv *env, const char *name, const char *body, const char *params[], int param_count) {
+int create(FoxScriptEnv *env, const char *name, const char *body, const char *params[], int param_count) {
     Function new_func;
     strncpy(new_func.name, name, MAX_NAME_LENGTH);
     new_func.param_count = param_count;
@@ -90,7 +105,7 @@ int add_function(FoxScriptEnv *env, const char *name, const char *body, const ch
 }
 
 // Call a function (mocked behavior)
-int call_function(FoxScriptEnv *env, const char *name, int args[], int arg_count) {
+int call(FoxScriptEnv *env, const char *name, int args[], int arg_count) {
     for (int i = 0; i < env->func_count; i++) {
         if (strcmp(env->functions[i].name, name) == 0) {
             if (env->functions[i].param_count == arg_count) {
@@ -107,33 +122,11 @@ int call_function(FoxScriptEnv *env, const char *name, int args[], int arg_count
 }
 
 // Free environment memory
-void free_env(FoxScriptEnv *env) {
+void freemem(FoxScriptEnv *env) {
     free(env->variables);
     free(env->functions);
 }
 
 int main() {
     FoxScriptEnv env;
-    init_env(&env);
-
-    // Add variables
-    add_variable(&env, "x", 10, 1);  // Mutable variable
-    add_variable(&env, "y", 20, 0);  // Immutable variable
-
-    // Update variables
-    update_variable(&env, "x", 15);
-    update_variable(&env, "y", 25);  // Should show error
-
-    // Add function
-    const char *params[] = {"a", "b"};
-    add_function(&env, "add", "return a + b;", params, 2);
-
-    // Call function
-    int args[] = {10, 20};
-    call_function(&env, "add", args, 2);
-
-    // Free allocated memory
-    free_env(&env);
-
-    return 0;
 }
